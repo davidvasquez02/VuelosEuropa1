@@ -7,32 +7,24 @@ from ortools.constraint_solver import pywrapcp
 
 
 
-def create_data_model(x, d):
-    """Stores the data for the problem."""
-    data = {}
-    data['distance_matrix'] = d 
-    data['num_vehicles'] = 1
-    data['depot'] = x-1
-    return data
-def print_solution(manager, routing, solution):
-    """Prints solution on console."""
-    print('Costo Pasaje: {} Euros'.format(solution.ObjectiveValue()))
-    index = routing.Start(0)
-    plan_output = 'Route for vehicle 0:\n'
-    route_distance = 0
+def modelo_datos(x, d):
+    datos = {}
+    datos['matriz_aristas'] = d 
+    datos['c1'] = 1
+    datos['inicial'] = x-1
+    return datos
+def imprimir_ruta(manager, ruta, solucion):
+    print('Costo Pasaje: {} Euros'.format(solucion.ObjectiveValue()))
+    indice = ruta.Start(0)
     cola=[]
-    while not routing.IsEnd(index):
-        x=manager.IndexToNode(index)+1
+    while not ruta.IsEnd(indice):
+        x=manager.IndexToNode(indice)+1
         cola.append(x)
-        plan_output += ' {} ->'.format(x)
-        previous_index = index
-        index = solution.Value(routing.NextVar(index))
-        route_distance += routing.GetArcCostForVehicle(previous_index, index, 0)
-    z=manager.IndexToNode(index)+1
+        previous_index = indice
+        indice = solucion.Value(ruta.NextVar(indice))
+    z=manager.IndexToNode(indice)+1
     cola.append(z)
-    plan_output += ' {}\n'.format(z)
-    #print(plan_output)
-    plan_output += 'Route distance: {}miles\n'.format(route_distance)
+    
     i=1
     print("La ruta escogida fue: ")
     while(len(cola)!=0):
@@ -42,7 +34,7 @@ def print_solution(manager, routing, solution):
             print("")
         i+=1
 
-def main(d):
+def recorridocompleto(d):
     print("Escoga ciudad de partida: ", end="", )
     x=-1
     while(x==-1):
@@ -53,51 +45,46 @@ def main(d):
         else:
             print("No se encontró el Aeropuerto, Vuelva a ingresarlo: ")
     
-    data = create_data_model(x, d)
+    datos = modelo_datos(x, d)
 
-    manager = pywrapcp.RoutingIndexManager(len(data['distance_matrix']),
-                                           data['num_vehicles'], data['depot'])
+    manager = pywrapcp.RoutingIndexManager(len(datos['matriz_aristas']),
+                                           datos['c1'], datos['inicial'])
 
-    routing = pywrapcp.RoutingModel(manager)
+    ruta = pywrapcp.RoutingModel(manager)
 
 
     def distance_callback(from_index, to_index):
-        """Returns the distance between the two nodes."""
-        # Convert from routing variable Index to distance matrix NodeIndex.
-        from_node = manager.IndexToNode(from_index)
-        to_node = manager.IndexToNode(to_index)
-        return data['distance_matrix'][from_node][to_node]
+        desde = manager.IndexToNode(from_index)
+        hasta = manager.IndexToNode(to_index)
+        return datos['matriz_aristas'][desde][hasta]
 
-    transit_callback_index = routing.RegisterTransitCallback(distance_callback)
+    transit_callback_index = ruta.RegisterTransitCallback(distance_callback)
 
-    # Define cost of each arc.
-    routing.SetArcCostEvaluatorOfAllVehicles(transit_callback_index)
+    ruta.SetArcCostEvaluatorOfAllVehicles(transit_callback_index)
 
-    # Setting first solution heuristic.
+    # Solución heuristica
     search_parameters = pywrapcp.DefaultRoutingSearchParameters()
     search_parameters.first_solution_strategy = (
         routing_enums_pb2.FirstSolutionStrategy.PATH_CHEAPEST_ARC)
 
-    # Solve the problem.
-    solution = routing.SolveWithParameters(search_parameters)
+    solucion = ruta.SolveWithParameters(search_parameters)
 
-    # Print solution on console.
-    if solution:
-        print_solution(manager, routing, solution)
+    if solucion:
+        imprimir_ruta(manager, ruta, solucion)
         
 def dijkstra(G, src, des):
 
-    dist = [(268435456)] * len(G)  # create dist list & initial with inf value
-    Q = PriorityQueue()  # create priority queue
-    dist[src] = 0  # source dist is always zero
-    Q.put((0, src))  # push source with zero dist in queue
+    dist = [(268435456)] * len(G) 
+    Q = PriorityQueue()  
+    dist[src] = 0  
+    Q.put((0, src))
 
-    while (Q.empty() == False):  # iterate until queue is empty
-        cost, u = Q.get()  # take minimum dist, node & pop up
+    while (Q.empty() == False): 
+        cost, u = Q.get()  
 
         if (u == des):
             sucesores(G, dist, src, des)
-            return dist[des]  # if destination find from Q, then return result
+            return dist[des]  
 
         for v, Cost in G[u]:  # take all node which is adjacency with u node
             if (dist[v] > cost + Cost):  # if present dist greater than to dist[u]+Cost
@@ -123,7 +110,8 @@ def sucesores (G, dist, src, des):
             print (buscarNombre(pila.pop()), end= "-",)
 
     print(buscarNombre(pila.pop()))
-def commonPoint(G, cant):
+
+def MasComun(G, cant):
     q=PriorityQueue()
     pila=[]
     for u in range (1, len(G)):
@@ -150,7 +138,7 @@ def matriz_adjacencia(G):
     return d
 def datosTiempo():
     a = []
-    a.append([1, 2, 60])
+    a.append([1, 2, 36])
     a.append([1, 3, 138])
     a.append([1, 4, 109])
     a.append([1, 5, 98])
@@ -221,7 +209,7 @@ def datosTiempo():
     a.append([2, 36, 239])
     a.append([3, 4, 121])
     a.append([3, 5, 78])
-    a.append([3, 6, 146])
+    a.append([3, 6, 120])
     a.append([3, 7, 78])
     a.append([3, 8, 110])
     a.append([3, 9, 56])
@@ -1555,7 +1543,7 @@ def menu1(Graph, Graph_Costo, d):
            time.sleep(2)
            os.system("cls")
         elif opcion == 3:
-           main(d)
+           recorridocompleto(d)
            i=80
         elif opcion == 4:
             print("")
@@ -1605,24 +1593,20 @@ if __name__ == "__main__":
     b = datosCosto()
 
     Node = 36
-    Edge = len(a)  # take input number of Node & Edge
-    Graph = [[] for i in range(Node + 1)]  # create 2D list for graph
+    Edge = len(a) 
+    Graph = [[] for i in range(Node + 1)]  
     for i in range(0, Edge):
-        u, v, w = a[i]  # take input u v w
-        ##if(u != v):
-        Graph[u].append((v, w))  # make u to v adjacency with w weight
-        Graph[v].append((u, w))  # make v to u adjacency with w weight
-        #else:
-    Graph_Costo =[[] for i in range(Node + 1)]  # create 2D list for graph
+        u, v, w = a[i] 
+        Graph[u].append((v, w)) 
+        Graph[v].append((u, w)) 
+    Graph_Costo =[[] for i in range(Node + 1)]
     for j in range(0, Edge):
         u, v, w = b[j]
-
         Graph_Costo[u].append((v, w))
         Graph_Costo[v].append((u, w))
    
-    
     print("\n")
     d=matriz_adjacencia(Graph )
     menu1(Graph, Graph_Costo, d)
     
-    #commonPoint(Graph, cant)
+    #MasComun(Graph, cant)
