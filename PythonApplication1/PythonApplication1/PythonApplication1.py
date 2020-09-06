@@ -1,4 +1,6 @@
 #from __future__ import print_function
+#***Se debe instalar OR-Tools for Python
+#python -m pip install --upgrade --user ortools
 from queue import PriorityQueue
 import os
 import time
