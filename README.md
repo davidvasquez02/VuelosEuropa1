@@ -8,3 +8,7 @@ Rubi Utima
 Adriana Villamizar
 
 Sistema de Sugerencia de Vuelos Internacionales en Europa
+
+////////////////
+Se debe instalar OR-tools python
+python -m pip install --upgrade --user ortools
